@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ar">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>مزحة آمنة — تم اختراق جهازك؟</title>
+  <style>
+    :root{--bg:#0b0b0b;--danger:#c62828;--ok:#2e7d32;--text:#fff}
+    html,body{height:100%;margin:0;font-family:Segoe UI, Tahoma, Arial, sans-serif;background:var(--bg);color:var(--text)}
+    .center{display:flex;align-items:center;justify-content:center;height:100%;padding:20px;box-sizing:border-box}
+    .card{width:100%;max-width:720px;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.6);background:#111}
+    .panic{background:linear-gradient(180deg, rgba(198,40,40,0.95), rgba(120,20,20,0.9));padding:48px;text-align:center}
+    .panic h1{margin:0;font-size:2.4rem;letter-spacing:1px}
+    .panic p{margin:12px 0 0;font-size:1.05rem;opacity:.95}
+    .reveal{display:none;padding:36px;text-align:center}
+    .reveal.show{display:block}
+    .reveal h2{margin:0 0 12px;font-size:1.5rem}
+    .btn{display:inline-block;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:600;cursor:pointer;border:none}
+    .btn-download{background:var(--ok);color:white}
+    .btn-close{background:#444;color:white;margin-left:10px}
+    .timer{font-weight:700;margin-top:14px;font-size:1rem}
+    .small{font-size:.9rem;opacity:.85;margin-top:10px}
+    footer{padding:12px;text-align:center;color:#bbb;font-size:.8rem}
+    @media (max-width:480px){.panic h1{font-size:1.6rem}}
+  </style>
+</head>
+<body>
+  <div class="center">
+    <div class="card" role="main" aria-live="polite">
+      <div id="panic" class="panic" aria-hidden="false">
+        <h1 id="panicTitle">تم اختراق جهازك الآن!</h1>
+        <p id="panicMsg">جاري الوصول إلى ملفاتك... توقف عن كل شيء الآن!</p>
+        <div class="timer" id="countdown">سلملي على جهازك يعمري بعد : <span id="sec">5</span> ثانية</div>
+
+      </div>
+
+      <div id="reveal" class="reveal" aria-hidden="true">
+        <h2>هاها — مزحة! 😂</h2>
+        <div style="margin-top:18px">
+        </div>
+      </div>
+
+
+    </div>
+  </div>
+
+  <script>
+    // مؤقت يظهر رسالة "تم الاختراق" لعدة ثوانٍ ثم يكشف أنها مزحة.
+    (function(){
+      const secondsEl = document.getElementById('sec');
+      const panic = document.getElementById('panic');
+      const reveal = document.getElementById('reveal');
+      let sec = 5; // عدد الثواني قبل بدء التنبيهات
+
+      // دالة توليد رابط الصورة
+      function makeSvgDataUrl() {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">
+          <rect width="100%" height="100%" fill="#0b0b0b"/>
+          <g font-family="Segoe UI, Tahoma, Arial" fill="#fff">
+            <text x="50%" y="45%" text-anchor="middle" font-size="64" font-weight="700">مزحة!</text>
+            <text x="50%" y="62%" text-anchor="middle" font-size="28" opacity="0.9">تم اختراق جهازك — لكنها مزحة فقط 😂</text>
+          </g>
+        </svg>`;
+        return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      }
+
+      // بعد انتهاء العد التنازلي، نبدأ إرسال 100 alert خلال 10 ثواني (كل 100 مللي ثانية)
+      function startAlertsThenDownload() {
+        let startTime = Date.now();
+        let duration = 10000; // 10 ثواني
+        let running = true;
+        // منع مغادرة الصفحة
+        window.onbeforeunload = function() {
+          if (running) return 'لا يمكنك مغادرة الصفحة أثناء العملية!';
+        };
+        function spamAlerts() {
+          if (Date.now() - startTime < duration) {
+            // منع زر الرجوع وزر الخروج (متوافق مع الجوال)
+            history.pushState(null, '', location.href);
+            window.onpopstate = function(event) {
+              if (running) {
+                history.pushState(null, '', location.href);
+                alert('لا يمكنك الرجوع أو الخروج أثناء العملية!');
+              }
+            };
+            document.addEventListener('visibilitychange', function() {
+              if (running && document.visibilityState === 'hidden') {
+                alert('لا يمكنك مغادرة الصفحة أثناء العملية!');
+              }
+            });
+            // تنبيه متسلسل (يعمل على الجوال بشكل أفضل)
+            setTimeout(function() {
+              alert('تم اختراق جهازك!');
+              spamAlerts();
+            }, 10);
+          } else {
+            running = false;
+            window.onbeforeunload = null;
+            window.onpopstate = null;
+            // كشف المزحة
+            panic.setAttribute('aria-hidden', 'true');
+            reveal.setAttribute('aria-hidden', 'false');
+            panic.style.display = 'none';
+            reveal.classList.add('show');
+            reveal.innerHTML = '<p style="color:green;font-weight:bold;margin-top:20px;">اكبس تحت يا وحش :) </p>' +
+              '<button id="downloadImgBtn" style="margin-top:18px;padding:12px 20px;border-radius:10px;background:#2e7d32;color:#fff;font-weight:600;cursor:pointer;">عرض الصورة</button>';
+            setTimeout(function(){
+              var btn = document.getElementById('downloadImgBtn');
+              if(btn){
+                btn.onclick = function(){
+                  var a = document.createElement('a');
+                  a.href = 'img.jpg';
+                  a.download = 'img.jpg';
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                };
+              }
+            }, 100);
+          }
+        }
+        // منع زر الرجوع من البداية (متوافق مع الجوال)
+        history.pushState(null, '', location.href);
+        spamAlerts();
+      }
+
+      const tick = () => {
+        secondsEl.textContent = sec;
+        if (sec <= 0) {
+          clearInterval(timer);
+          startAlertsThenDownload();
+        }
+        sec--;
+      };
+
+      tick();
+      const timer = setInterval(tick, 1000);
+
+      // زر إغلاق فقط يخفي الواجهة
+      const closeBtn = document.getElementById('closeBtn');
+      closeBtn.addEventListener('click', function(){
+        reveal.classList.remove('show');
+        // نعطي رسالة لطيفة بعد الإغلاق
+        panic.style.display = 'block';
+        document.getElementById('panicTitle').textContent = 'مزحة انتهت';
+        document.getElementById('panicMsg').textContent = 'شكراً لأنك شاركت بالمزحة — جهازك آمن.';
+        panic.style.background = 'linear-gradient(180deg,#2e7d32,#1b5e20)';
+        panic.setAttribute('aria-hidden','false');
+      });
+    })();
+  </script>
+</body>
+</html>
